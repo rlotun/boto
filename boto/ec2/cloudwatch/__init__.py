@@ -14,7 +14,7 @@
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
 # OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABIL-
 # ITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-# SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
+# SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
 # WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
@@ -138,12 +138,13 @@ My server obviously isn't very busy right now!
 """
 from boto.connection import AWSQueryConnection
 from boto.ec2.cloudwatch.metric import Metric
+from boto.ec2.cloudwatch.alarm import MetricAlarm, AlarmHistoryItem
 from boto.ec2.cloudwatch.datapoint import Datapoint
 import boto
 
 class CloudWatchConnection(AWSQueryConnection):
 
-    APIVersion = boto.config.get('Boto', 'cloudwatch_version', '2009-05-15')
+    APIVersion = boto.config.get('Boto', 'cloudwatch_version', '2010-08-01')
     Endpoint = boto.config.get('Boto', 'cloudwatch_endpoint', 'monitoring.amazonaws.com')
     SignatureVersion = '2'
 
@@ -153,8 +154,8 @@ class CloudWatchConnection(AWSQueryConnection):
                  https_connection_factory=None, path='/'):
         """
         Init method to create a new connection to EC2 Monitoring Service.
-        
-        B{Note:} The host argument is overridden by the host specified in the boto configuration file.        
+
+        B{Note:} The host argument is overridden by the host specified in the boto configuration file.
         """
         AWSQueryConnection.__init__(self, aws_access_key_id, aws_secret_access_key,
                                     is_secure, port, proxy, proxy_port, proxy_user, proxy_pass,
@@ -165,21 +166,20 @@ class CloudWatchConnection(AWSQueryConnection):
             items = [items]
         for i in range(1, len(items)+1):
             params[label % i] = items[i-1]
-            
-    def get_metric_statistics(self, period, start_time, end_time, measure_name,
+
+    def get_metric_statistics(self, period, start_time, end_time, metric_name,
                               namespace, statistics=None, dimensions=None, unit=None):
         """
         Get time-series data for one or more statistics of a given metric.
-        
-        :type measure_name: string
-        :param measure_name: CPUUtilization|NetworkIO-in|NetworkIO-out|DiskIO-ALL-read|
+
+        :type metric_name: string
+        :param metric_name: CPUUtilization|NetworkIO-in|NetworkIO-out|DiskIO-ALL-read|
                              DiskIO-ALL-write|DiskIO-ALL-read-bytes|DiskIO-ALL-write-bytes
-        
+
         :rtype: list
-        :return: A list of :class:`boto.ec2.image.Image`
         """
         params = {'Period' : period,
-                  'MeasureName' : measure_name,
+                  'MetricName' : measure_name,
                   'Namespace' : namespace,
                   'StartTime' : start_time.isoformat(),
                   'EndTime' : end_time.isoformat()}
@@ -208,6 +208,14 @@ class CloudWatchConnection(AWSQueryConnection):
         if next_token:
             params['NextToken'] = next_token
         return self.get_list('ListMetrics', params, [('member', Metric)])
-        
 
-    
+    def describe_alarms(self, next_token=None):
+        """
+        """
+        return self.get_list('DescribeAlarms', {}, [('member', MetricAlarm)])
+
+    def describe_alarm_history(self, next_token=None):
+        """
+        """
+        return self.get_list('DescribeAlarmHistory', {}, [('member', AlarmHistoryItem)])
+
