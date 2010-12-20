@@ -360,7 +360,7 @@ class CloudWatchConnection(AWSQueryConnection):
                     'MetricName'            :       alarm.metric,
                     'Namespace'             :       alarm.namespace,
                     'Statistic'             :       alarm.statistic,
-                    'ComparisonOperator'    :       alarm.comparison,
+                    'ComparisonOperator'    :       MetricAlarm._cmp_map[alarm.comparison],
                     'Threshold'             :       alarm.threshold,
                     'EvaluationPeriods'     :       alarm.evaluation_periods,
                     'Period'                :       alarm.period,
@@ -433,7 +433,7 @@ class CloudWatchConnection(AWSQueryConnection):
         :param alarms: List of alarm names.
         """
         params = {}
-        self.build_list_params(params, alarm_names, 'AlarmNames')
+        self.build_list_params(params, alarm_names, 'AlarmNames.member.%s')
         return self.get_status('EnableAlarmActions', params)
 
     def disable_alarm_actions(self, alarm_names):
@@ -444,6 +444,6 @@ class CloudWatchConnection(AWSQueryConnection):
         :param alarms: List of alarm names.
         """
         params = {}
-        self.build_list_params(params, alarm_names, 'AlarmNames')
+        self.build_list_params(params, alarm_names, 'AlarmNames.member.%s')
         return self.get_status('DisableAlarmActions', params)
 

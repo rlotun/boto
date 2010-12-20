@@ -65,7 +65,7 @@ class Metric(object):
         else:
             setattr(self, name, value)
 
-    def query(self, start_time, end_time, statistic, unit, period=60):
+    def query(self, start_time, end_time, statistic, unit=None, period=60):
         return self.connection.get_metric_statistics(period, start_time, end_time,
                                                      self.name, self.namespace, [statistic],
                                                      self.dimensions, unit)

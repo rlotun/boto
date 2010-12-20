@@ -146,6 +146,9 @@ class MetricAlarm(object):
         """
         return self.connection.set_alarm_state(self.name, reason, value, data)
 
+    def update(self):
+        return self.connection.update_alarm(self)
+
     def enable_actions(self):
         return self.connection.enable_alarm_actions([self.name])
 
