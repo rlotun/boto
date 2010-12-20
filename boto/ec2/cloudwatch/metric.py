@@ -69,3 +69,12 @@ class Metric(object):
         return self.connection.get_metric_statistics(period, start_time, end_time,
                                                      self.name, self.namespace, [statistic],
                                                      self.dimensions, unit)
+
+    def describe_alarms(self, period=None, statistic=None, dimensions=None, unit=None):
+        return self.connection.describe_alarms_for_metric(self.name,
+                                                          self.namespace,
+                                                          period,
+                                                          statistic,
+                                                          dimensions,
+                                                          unit)
+

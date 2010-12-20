@@ -19,10 +19,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 #
+
+from datetime import datetime
 import json
 
 
 class MetricAlarm(object):
+
+    OK = 'OK'
+    ALARM = 'ALARM'
+    INSUFFICIENT_DATA = 'INSUFFICIENT_DATA'
+
     _cmp_map = {
                     '>='    :   'GreaterThanOrEqualToThreshold',
                     '>'     :   'GreaterThanThreshold',
@@ -69,10 +76,10 @@ class MetricAlarm(object):
         self.metric = metric
         self.namespace = namespace
         self.statistic = statistic
-        self.threshold = float(threshold)
-        self.comparison = self._cmp_map[comparison]
-        self.period = int(period)
-        self.evaluation_periods = int(evaluation_periods)
+        self.threshold = float(threshold) if threshold is not None else None
+        self.comparison = self._cmp_map.get(comparison)
+        self.period = int(period) if period is not None else None
+        self.evaluation_periods = int(evaluation_periods) if evaluation_periods is not None else None
         self.actions_enabled = None
         self.alarm_actions = []
         self.alarm_arn = None
@@ -85,8 +92,11 @@ class MetricAlarm(object):
         self.state_value = None
         self.unit = None
 
+    def __repr__(self):
+        return 'MetricAlarm:%s[%s(%s) %s %s]' % (self.name, self.metric, self.statistic, self.comparison, self.threshold)
+
     def startElement(self, name, attrs, connection):
-        pass
+        return
 
     def endElement(self, name, value, connection):
         if name == 'ActionsEnabled':
@@ -122,8 +132,37 @@ class MetricAlarm(object):
         else:
             setattr(self, name, value)
 
+    def set_state(self, value, reason, data=None):
+        """ Temporarily sets the state of an alarm.
+
+        :type value: str
+        :param value: OK | ALARM | INSUFFICIENT_DATA
+
+        :type reason: str
+        :param reason: Reason alarm set (human readable).
+
+        :type data: str
+        :param data: Reason data (will be jsonified).
+        """
+        return self.connection.set_alarm_state(self.name, reason, value, data)
+
+    def enable_actions(self):
+        return self.connection.enable_alarm_actions([self.name])
+
+    def disable_actions(self):
+        return self.connection.disable_alarm_actions([self.name])
+
+    def describe_history(self, start_date=None, end_date=None, max_records=None, history_item_type=None, next_token=None):
+        return self.connection.describe_alarm_history(self.name, start_date, end_date,
+                                                      max_records, history_item_type, next_token)
 
 class AlarmHistoryItem(object):
+    def __init__(self, connection=None):
+        self.connection = connection
+
+    def __repr__(self):
+        return 'AlarmHistory:%s[%s at %s]' % (self.name, self.summary, self.timestamp)
+
     def startElement(self, name, attrs, connection):
         pass
 
@@ -137,5 +176,5 @@ class AlarmHistoryItem(object):
         elif name == 'HistorySummary':
             self.summary = value
         elif name == 'Timestamp':
-            self.timestamp = value
+            self.timestamp = datetime.strptime(value, '%Y-%m-%dT%H:%M:%S.%fZ')
 
